@@ -48,18 +48,18 @@ class GgiinStruction:
                     boost_value=13.0)
 
 
-                if  lev.distance(string, 'finish　training')/(max(len(string), len('finish　training')) *1.00)<0.3:
+                if  lev.distance(string.result_str, 'finish　training')/(max(len(string.result_str), len('finish　training')) *1.00)<0.3:
                     self.save_name('' , True)
                     self.name=[]
                     self.feature=[]
                     break
 
-                self.tts(string + ' is this OK?')
+                self.tts(string.result_str + ' is this OK?')
 
             recognition = self.stt(short_str=True,context_phrases=['yes','no','again'],
                     boost_value=15.0)
             if 'yes' in recognition.result_str:
-                self.save_name(string , True,add=False)
+                self.save_name(string.result_str , True,add=False)
                 end=False
                 self.tts('next')
 
@@ -68,7 +68,7 @@ class GgiinStruction:
                 end=False
 
             elif 'again' in recognition.result_str:
-                self.tts(string +' is this OK?')
+                self.tts(string.result_str +' is this OK?')
                 end=True
 
         self.tts('Please tell me the place.')
@@ -78,13 +78,13 @@ class GgiinStruction:
                 string=self.stt(short_str=True,
                     context_phrases=self.place_template,
                     boost_value=13.0)
-                self.tts(string +' Is this OK?')
+                self.tts(string.result_str +' Is this OK?')
 
             recognition = self.stt(short_str=True,context_phrases=['yes','no','again'],
                     boost_value=15.0)
 
             if 'yes' in recognition.result_str:
-                res=self.save_name(string , False)
+                res=self.save_name(string.result_str , False)
                 break
 
             elif 'no' in recognition.result_str:
@@ -92,7 +92,7 @@ class GgiinStruction:
                 end=False
 
             elif 'again' in recognition.result_str:
-                self.tts(string +' Is this OK?')
+                self.tts(string.result_str +' Is this OK?')
                 end=True
 
         self.feature=[]

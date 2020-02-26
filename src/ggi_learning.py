@@ -24,9 +24,9 @@ class GgiinStruction:
                         'place_name':[],'place_feature':[]}
             pickle.dump(dictionary, f)
 
-        with open(file+'set_word/place_name','r') as f:
+        with open(file+'/place_name','r') as f:
             self.object_template=[line.strip() for line in f.readlines()]
-        with open(file+'set_word/place_name','r') as c:
+        with open(file+'/place_name','r') as c:
             self.place_template=[line.strip() for line in c.readlines()]
         self.name=[]
         self.feature=[]

@@ -40,7 +40,6 @@ class ggitest():
             with open(file_place+'/object_file.pkl','rb') as f:
                 self.dict=pickle.load(f)
 
-        self.tts("I await your instruction")
         while 1:
 
             name=[]

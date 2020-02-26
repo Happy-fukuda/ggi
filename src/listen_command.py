@@ -2,14 +2,14 @@
 # -*- coding: utf-8 -*-
 from gcp_texttospeech.srv import TTS
 #from std_srvs.srv import Empty
-import stt
+from voice_common_pkg.srv import SpeechToText
 
 import Levenshtein as lev
 import rospy
-from ggi.srv import ListenCommand
-from ggi.srv import ListenCommandResponse
+from voice_common_pkg.srv import ListenCommand
+from voice_common_pkg.srv import ListenCommandResponse
 #filename and path
-file='/home/athome/catkin_ws/src/ggi/set_word/'
+file='/home/athome/catkin_ws/src/voice_common_pkg/config/'
 
 
 
@@ -19,6 +19,8 @@ class GgiinStruction:
 
         print("server is ready")
         rospy.wait_for_service('/tts')
+        rospy.wait_for_service('/stt_server')
+        self.stt=rospy.ServiceProxy('/stt_server',SpeechToText)
         self.server=rospy.Service('/listen_command',ListenCommand,self.main)
         #self.sound=rospy.ServiceProxy('/sound', Empty)
         self.tts=rospy.ServiceProxy('/tts', TTS)
@@ -28,11 +30,11 @@ class GgiinStruction:
         with open(file+req.file_name,'r') as f:
             speak_list=[line.strip() for line in f.readlines()]
         self.tts("ready")
-        string=stt.google_speech_api(phrases=speak_list)
+        string=self.stt(short_str=True,context_phrases=speak_list,boost_value=20.0)
         num_lev=1
         prog_num=-1
         for str_num in range(len(speak_list)):
-            result = lev.distance(string, speak_list[str_num])/(max(len(string), len(speak_list[str_num])) *1.00)
+            result = lev.distance(string.result_str, speak_list[str_num])/(max(len(string.result_str), len(speak_list[str_num])) *1.00)
 
             if result <0.2:
                 prog_num=str_num

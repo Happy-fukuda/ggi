@@ -7,15 +7,15 @@ from os import path
 #発話
 from gcp_texttospeech.srv import TTS
 #音声認識
-import stt_v
+from voice_common_pkg.srv import SpeechToText
 #word2vec(どのくらい似てるか)
 import gensim.downloader as api
 import sys
-from ggi.srv import GgiLearning
-from ggi.srv import GgiLearningResponse
+from voice_common_pkg.srv import GgiLearning
+from voice_common_pkg.srv import GgiLearningResponse
 import rospy
 
-file_place='/home/athome/catkin_ws/src/ggi'
+file_place='/home/athome/catkin_ws/src/voice_common_pkg/config'
 
 
 class ggitest():
@@ -23,18 +23,21 @@ class ggitest():
         #ベクトル読み込み
 
         self.word_vectors = api.load("glove-wiki-gigaword-100")
-        print('ready to server')
+        print('server is ready')
         rospy.wait_for_service('/tts')
+        rospy.wait_for_service('/stt_server')
+        self.stt=rospy.ServiceProxy('/stt_server',SpeechToText)
         self.tts=rospy.ServiceProxy('/tts', TTS)
         self.server=rospy.Service('/test_phase',GgiLearning,self.main)
 
+
     def main(self,req):
-        if not path.isfile(file_place+'/object/object_file.pkl'):
+        if not path.isfile(file_place+'/object_file.pkl'):
             print('not found object file')
             sys.exit()
 
         else:
-            with open(file_place+'/object/object_file.pkl','rb') as f:
+            with open(file_place+'/object_file.pkl','rb') as f:
                 self.dict=pickle.load(f)
 
         self.tts("I await your instruction")
@@ -44,17 +47,17 @@ class ggitest():
             name_feature=[]
             place=[]
             place_feature=[]
-            string=stt_v.google_speech_api()
+            string=self.stt(short_str=False)
 
             shut='shut down'
 
-            if  shut in string:
+            if  shut in string.result_str:
                 self.tts("shut down")
                 break
 
             else:
                 i=0
-                split=nltk.word_tokenize(string)
+                split=nltk.word_tokenize(string.result_str)
                 for h in range(len(split)):
                     if split[h]=='the':
                         split[h]='a'
@@ -124,11 +127,11 @@ class ggitest():
             if set(name) & set(self.dict['object_name'][i]) and set(place) & set(self.dict['place_name'][i]): #オブジェクトの名前と場所
                 self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
                 while 1:
-                    y=stt_v.google_speech_api()
-                    if 'yes' in y:
+                    y=self.stt(short_str=False)
+                    if 'yes' in y.result_str:
                         self.tts('OK.')
                         break
-                    elif 'no' in y:
+                    elif 'no' in y.result_str:
                         return 'no'
                 if self.dict['place_feature'][i]:
                     str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
@@ -141,11 +144,11 @@ class ggitest():
             if set(place) & set(self.dict['place_name'][i]) and set(place_feature) & set(self.dict['place_feature'][i]): #場所と場所の特徴
                 self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
                 while 1:
-                    y=stt_v.google_speech_api()
-                    if 'yes' in y:
+                    y=self.stt(short_str=False)
+                    if 'yes' in y.result_str:
                         self.tts('OK.')
                         break
-                    elif 'no' in y:
+                    elif 'no' in y.result_str:
                         return 'no'
                 if self.dict['place_feature'][i]:
                     str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
@@ -161,11 +164,11 @@ class ggitest():
                         if value>0.6 and set(place_feature) & set(self.dict['place_feature'][i]):
                             self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
                             while 1:
-                                y=stt_v.google_speech_api()
-                                if 'yes' in y:
+                                y=self.stt(short_str=False)
+                                if 'yes' in y.result_str:
                                     self.tts('OK.')
                                     break
-                                elif 'no' in y:
+                                elif 'no' in y.result_str:
                                     return 'no'
                             if self.dict['place_feature'][i]:
                                 str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
@@ -181,11 +184,11 @@ class ggitest():
             if set(name) & set(self.dict['object_name'][i]) and set(name_feature) & set(self.dict['object_feature'][i]): #オブジェクトの名前と特徴
                 self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
                 while 1:
-                    y=stt_v.google_speech_api()
-                    if 'yes' in y:
+                    y=self.stt(short_str=False)
+                    if 'yes' in y.result_str:
                         self.tts('OK.')
                         break
-                    elif 'no' in y:
+                    elif 'no' in y.result_str:
                         return 'no'
                 if self.dict['place_feature'][i]:
                     str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
@@ -208,11 +211,11 @@ class ggitest():
             if succese:
                 self.tts('I will go '+' '.join(self.dict['place_feature'][correct]) +' '.join(self.dict['place_name'][correct])+' is this  OK?')
                 while 1:
-                    y=stt_v.google_speech_api()
-                    if 'yes' in y:
+                    y=self.stt(short_str=False)
+                    if 'yes' in y.result_str:
                         self.tts('OK.')
                         break
-                    elif 'no' in y:
+                    elif 'no' in y.result_str:
                         return 'no'
                 if self.dict['place_feature'][correct]:
                     str=' '.join(self.dict['place_feature'][correct]) +' '+' '.join(self.dict['place_name'][correct])
@@ -237,11 +240,11 @@ class ggitest():
             if succese:
                 self.tts('I will go '+' '.join(self.dict['place_feature'][correct]) +' '.join(self.dict['place_name'][correct])+' is this  OK?')
                 while 1:
-                    y=stt_v.google_speech_api()
-                    if 'yes' in y:
+                    y=self.stt(short_str=False)
+                    if 'yes' in y.result_str:
                         self.tts('OK.')
                         break
-                    elif 'no' in y:
+                    elif 'no' in y.result_str:
                         return 'no'
                 if self.dict['place_feature'][correct]:
                     str=' '.join(self.dict['place_feature'][correct]) +' '+' '.join(self.dict['place_name'][correct])
@@ -259,6 +262,6 @@ class ggitest():
 
 
 if __name__=='__main__':
-    rospy.init_node('ggi_test')
+    rospy.init_node('test_phase')
     ggi=ggitest()
     rospy.spin()

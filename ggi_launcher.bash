@@ -13,7 +13,7 @@ else
 fi
 
 #仮想環境へ入る
-. ~/catkin_ws/src/voice_reference/api/bin/activate
+source ~/catkin_ws/src/voice_reference/api/bin/activate
 
 #launchファイルを起動
-roslaunch ggi server.launch
+roslaunch voice_common_pkg sp_ggi.launch

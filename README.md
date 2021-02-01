@@ -13,3 +13,6 @@ ggi_learningで作ったpickleファイルとword2vecの学習済みデータを
 - オブジェクトの名前と特徴が一致している
 - 場所の名前がコサイン類似度で一定の数値を満たしている。
 - オブジェクトの名前がコサイン類似度で一定の数値を満たしている
+### word2vecの学習済みモデル
+https://github.com/RaRe-Technologies/gensim-data
+glove-wiki-gigaword-100

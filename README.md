@@ -16,3 +16,5 @@ ggi_learningで作ったpickleファイルとword2vecの学習済みデータを
 ### word2vecの学習済みモデル
 https://github.com/RaRe-Technologies/gensim-data
 glove-wiki-gigaword-100
+##commentedブランチ
+プログラムにコメント文で説明を記述してある

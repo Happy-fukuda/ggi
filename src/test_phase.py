@@ -21,7 +21,7 @@ file_place='/home/athome/catkin_ws/src/voice_common_pkg/config'
 class ggitest():
     def __init__(self):
         #ベクトル読み込み
-        self.word_vectors = api.load("glove-wiki-gigaword-100")
+        self.word_vectors = api.load("glove-twitter-200")
         print('Wahing for tts and stt_server')
         rospy.wait_for_service('/tts')
         rospy.wait_for_service('/stt_server')

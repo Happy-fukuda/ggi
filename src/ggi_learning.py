@@ -12,21 +12,21 @@ import Levenshtein as lev
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
 
-file='/home/athome/catkin_ws/src/voice_common_pkg/config' #作成場所の指定
+file_path='/home/athome/catkin_ws/src/voice_common_pkg/config' #作成場所の指定
 
 
 class GgiinStruction:
     def __init__(self):
 
         #保存ファイルの初期化
-        with open(file+'/object_file.pkl',"wb") as f:
+        with open(file_path+'/object_file.pkl',"wb") as f:
             dictionary={'object_name':[],'object_feature':[],
                         'place_name':[],'place_feature':[]}
             pickle.dump(dictionary, f)
         #google speech to textが認識しやすいよう設定する単語をリスト化
-        with open(file+'/place_name','r') as f:
+        with open(file_path+'/place_name','r') as f:
             self.object_template=[line.strip() for line in f.readlines()]
-        with open(file+'/place_name','r') as c:
+        with open(file_path+'/place_name','r') as c:
             self.place_template=[line.strip() for line in c.readlines()]
         #pickleファイルに保存するデータを保存するリスト
         self.name=[]
@@ -53,6 +53,7 @@ class GgiinStruction:
 
                 #finish trainingと認識したときpickleファイルに保存してリストを初期化
                 if  lev.distance(string.result_str, 'finish　training')/(max(len(string.result_str), len('finish　training')) *1.00)<0.3:
+                    self.WordGeneralization()
                     self.save_name('' , True)
                     self.name=[]
                     self.feature=[]
@@ -81,7 +82,6 @@ class GgiinStruction:
         #場所の登録
         while 1:
             if not end:
-
                 string=self.stt(short_str=True,
                     context_phrases=self.place_template,
                     boost_value=13.0)
@@ -109,6 +109,18 @@ class GgiinStruction:
         return GgiLearningResponse(location_name=res)
 
 
+    #単語の汎化を追加
+    def WordGeneralization(self):
+        with open(file_path+"/class_generalization.pkl","rb") as f:
+            #辞書型でvalueは集合
+            class_data=pickle.load(f)
+        for str in self.name:
+            for k,v in class_data.items():
+                if str in v:
+                    self.name.append(k)
+
+
+
 
     #保存  s=string ob=name or place addはpickleファイルに保存するか否か
     def save_name(self,s,ob,add=True):
@@ -128,25 +140,26 @@ class GgiinStruction:
             elif 'NN' in pos[i][1]:
                 self.name.append(pos[i][0])
         if add:
-            with open(file+'/object_file.pkl','rb') as web:
-                dict=pickle.load(web)
+            with open(file_path+'/object_file.pkl','rb') as web:
+                dict_data=pickle.load(web)
             #オブジェクトの登録
             if ob:
-                dict['object_name'].append(self.name)
-                dict['object_feature'].append(self.feature)
-                with open(file+'/object_file.pkl','wb') as f:
-                    pickle.dump(dict, f)
+                dict_data['object_name'].append(self.name)
+                dict_data['object_feature'].append(self.feature)
+
+                with open(file_path+'/object_file.pkl','wb') as f:
+                    pickle.dump(dict_data, f)
             #場所の登録
             else:
-                dict['place_name'].append(self.name)
-                dict['place_feature'].append(self.feature)
-                with open(file+'/object_file.pkl','wb') as f:
-                    pickle.dump(dict, f)
-                if dict['place_feature'][len(dict['place_feature'])-1]:
-                    str=' '.join(dict['place_feature'][len(dict['place_feature'])-1])+' '+' '.join(dict['place_name'][len(dict['place_name'])-1])
+                dict_data['place_name'].append(self.name)
+                dict_data['place_feature'].append(self.feature)
+                with open(file_path+'/object_file.pkl','wb') as f:
+                    pickle.dump(dict_data, f)
+                if dict_data['place_feature'][len(dict_data['place_feature'])-1]:
+                    str=' '.join(dict_data['place_feature'][len(dict_data['place_feature'])-1])+' '+' '.join(dict_data['place_name'][len(dict_data['place_name'])-1])
                 else:
-                    str=' '.join(dict['place_name'][len(dict['place_name'])-1])
-                print(dict)
+                    str=' '.join(dict_data['place_name'][len(dict_data['place_name'])-1])
+                print(dict_data)
                 return str
 
 

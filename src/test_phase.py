@@ -15,13 +15,14 @@ from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
 import rospy
 
-file_place='/home/athome/catkin_ws/src/voice_common_pkg/config'
+file_place='~/catkin_ws/src/voice_common_pkg/config'
+minimum_value=0.5 #コサイン類似度の最低値
+#ベクトル読み込み
+word_vectors = api.load("glove-twitter-200")
 
-
-class ggitest():
+class GgiTest():
     def __init__(self):
         #ベクトル読み込み
-        self.word_vectors = api.load("glove-twitter-200")
         print('Wahing for tts and stt_server')
         rospy.wait_for_service('/tts')
         rospy.wait_for_service('/stt_server')
@@ -32,6 +33,8 @@ class ggitest():
 
 
     def main(self,req):
+        switch_num=0
+        #登録したファイルを読み込む
         if not path.isfile(file_place+'/object_file.pkl'):
             print('not found object file')
             sys.exit()
@@ -40,16 +43,14 @@ class ggitest():
             with open(file_place+'/object_file.pkl','rb') as f:
                 self.dict=pickle.load(f)
 
-<<<<<<< HEAD
-
-=======
->>>>>>> 0ea7dc4c427c016f0e790861e608f3d943a9dfc3
+        #オペレーターの指示を認識
         while 1:
 
             name=[]
             name_feature=[]
             place=[]
             place_feature=[]
+            #音声認識
             string=self.stt(short_str=False)
 
             shut='shut down'
@@ -107,163 +108,120 @@ class ggitest():
 
 
                 #ggi_learingで学習した内容から探索
-                str=self.branch(name,name_feature,place,place_feature)
+                search_class=SearchObject(self.stt,self.tts,self.dict)
+                str=search_class.main(name,name_feature,place,place_feature,switch_num)
                 if str=='no':
                     self.tts('one more time')
                     continue
-
                 elif str:
                     return GgiLearningResponse(location_name=str)
                 else:
                     self.tts("I don't know " )
                     self.tts('one more time')
+                    switch_num+=1
 
-    #探索
-    def branch(self,name,name_feature,place,place_feature):
-        str=''
-        defalt=0 #value用
+
+
+
+class SearchObject():
+
+    def __init__(self,stt_server:class,tts_server:class,dict_data:dict):
+        self.stt_server=stt_server
+        self.tts_server=tts_server
+        self.dict=dict_data
+        self.long=len(dict_data['place_name'])
+
+
+    def main(self,name:list,name_feature:list,place:list,place_feature:list,switch_num:int):
+        #登録した情報分だけそれぞれ確認する
+        for i in range(self.long):
+            #ものの名前と場所の名前の一致を確認
+            branch = self.matchedSearch('object_name','place_name',name,place,i)
+            if branch:
+                return branch
+
+        for i in range(self.long):
+            #場所の名前と特徴が一致している
+            branch=self.matchedSearch('place_name','place_feature',place,place_feature,i)
+            if branch:
+                return branch
+
+        #類似度計算
+        name_similarity=self.matchedWord2vec("object_name",name)# =>int or bool
+        place_similarty=self.matchedWord2vec("place_name",place)
+        #同じ場所を示していたら
+        if name_similarity==place_similarty and name_similarity != False:
+            return self.wordJoin(name_similarity)
+
+        for i in range(self.long):
+            #ものの名前と特徴の一致
+            branch = self.matchedSearch('object_name','object_feature',name,name_feature,i)
+            if branch:
+                return branch
+
+        #最終オブジェクト名または場所名で判断
+        if switch_num%2==0:
+            return self.wordJoin(name_similarity)
+        else:
+            return self.wordJoin(place_similarty)
+
+
+
+    def listenAnswer(self) -> str:
+        while 1:
+            y=self.stt_server(short_str=False)
+            if 'yes' in y.result_str:
+                self.tts('OK.')
+                return 'yes'
+            elif 'no' in y.result_str:
+                return 'no'
+
+
+    def matchedSearch(self,dict_key1:str, dict_key2:str, information_1:list, information_2:list, num:int) -> (str,bool):
+
+        if set(information_1) & set(self.dict[dict_key1][num]) and set(information_2) & set(self.dict[dict_key2][num]):
+            return self.wordJoin(num)
+        else:
+            return False
+
+    #類似度がもっとも高いものを探す
+    def matchedWord2vec(self,dict_key1:str,information_1:str) -> (int,bool):
+        defalt=0.0
         correct=0 #要素数
         succese=False
-        #処理時間短縮のため長さを保存しておく
-        long=len(self.dict['place_name'])
-        for i in range(long):
-        #優先度順に確認
-            #オブジェクトの名前と場所の名前が一致しているかどうか（積集合）
-            if set(name) & set(self.dict['object_name'][i]) and set(place) & set(self.dict['place_name'][i]):
-                self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
-                #あっているかを聞く
-                while 1:
-                    y=self.stt(short_str=False)
-                    if 'yes' in y.result_str:
-                        self.tts('OK.')
-                        break
-                    #noのとき聞き直し
-                    elif 'no' in y.result_str:
-                        return 'no'
-                #その場所には特徴が含まれている場合、名前と結合（どこに行くかを発話するため）
-                if self.dict['place_feature'][i]:
-                    str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
-                else:
-                    str=' '.join(self.dict['place_name'][i])
-
-                print('pla + feature')
-                return str
-            #場所の名前と特徴が一致している
-            if set(place) & set(self.dict['place_name'][i]) and set(place_feature) & set(self.dict['place_feature'][i]):
-                self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
-                while 1:
-                    y=self.stt(short_str=False)
-                    if 'yes' in y.result_str:
-                        self.tts('OK.')
-                        break
-                    elif 'no' in y.result_str:
-                        return 'no'
-                if self.dict['place_feature'][i]:
-                    str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
-                else:
-                    str=' '.join(self.dict['place_name'][i])
-                print('pl + feature')
-                return str
-            #場所の名前がコサイン類似度で一定の数値を満たしていて、特徴が一致している(tryはword2vecに存在しない単語の場合エラーが出るため)
-            try:
-                for na in place:
-                    for ob_na in self.dict['place_name'][i]:
-                        value= self.word_vectors.similarity(na,ob_na)  #コサイン類似度の計算
-                        if value>0.6 and set(place_feature) & set(self.dict['place_feature'][i]):
-                            self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
-                            while 1:
-                                y=self.stt(short_str=False)
-                                if 'yes' in y.result_str:
-                                    self.tts('OK.')
-                                    break
-                                elif 'no' in y.result_str:
-                                    return 'no'
-                            if self.dict['place_feature'][i]:
-                                str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
-                            else:
-                                str=' '.join(self.dict['place_name'][i])
-
-                            print('wo2 + pl')
-
-                            return str
-            except:
-                pass
-            #オブジェクトの名前と特徴が一致している
-            if set(name) & set(self.dict['object_name'][i]) and set(name_feature) & set(self.dict['object_feature'][i]):
-                self.tts('I will go '+' '.join(self.dict['place_feature'][i]) +' '.join(self.dict['place_name'][i])+' is this  OK?')
-                while 1:
-                    y=self.stt(short_str=False)
-                    if 'yes' in y.result_str:
-                        self.tts('OK.')
-                        break
-                    elif 'no' in y.result_str:
-                        return 'no'
-                if self.dict['place_feature'][i]:
-                    str=' '.join(self.dict['place_feature'][i]) +' '+' '.join(self.dict['place_name'][i])
-                else:
-                    str=' '.join(self.dict['place_name'][i])
-                print('name and feature')
-
-                return str
-
-        #場所の名前がコサイン類似度で一定の数値を満たしている。
+        #tryはword2vecに存在しない単語の場合エラーが出るため
         try:
-            for na in place:
-                for ob in range(long):
-                    for ob_na in self.dict['place_name'][ob]:
-                        value= self.word_vectors.similarity(na,ob_na)
-                        if value>0.5 and defalt<value:
+            for na in information_1:
+                for ob in range(self.long):
+                    for ob_na in self.dict[dict_key1][ob]:
+                        value= word_vectors.similarity(na,ob_na)
+                        if value>minimum_value and defalt<value:
                             defalt=value
                             correct=ob
                             succese=True
             if succese:
-                self.tts('I will go '+' '.join(self.dict['place_feature'][correct]) +' '.join(self.dict['place_name'][correct])+' is this  OK?')
-                while 1:
-                    y=self.stt(short_str=False)
-                    if 'yes' in y.result_str:
-                        self.tts('OK.')
-                        break
-                    elif 'no' in y.result_str:
-                        return 'no'
-                if self.dict['place_feature'][correct]:
-                    str=' '.join(self.dict['place_feature'][correct]) +' '+' '.join(self.dict['place_name'][correct])
-                else:
-                    str=' '.join(self.dict['place_name'][correct])
-                print('word pl')
-
-                return str
+                return correct
+            else:
+                return False
         except:
-            pass
+            return False
 
-        #オブジェクトの名前がコサイン類似度で一定の数値を満たしている
-        try:
-            for na in name:
-                for ob in range(long):
-                    for ob_na in self.dict['object_name'][ob]:
-                        value= self.word_vectors.similarity(na,ob_na) #オブジェクトの名前がどのぐらい似てるか
-                        if value>0.5 and defalt<value:
-                            defalt=value
-                            correct=ob
-                            succese=True
-            if succese:
-                self.tts('I will go '+' '.join(self.dict['place_feature'][correct]) +' '.join(self.dict['place_name'][correct])+' is this  OK?')
-                while 1:
-                    y=self.stt(short_str=False)
-                    if 'yes' in y.result_str:
-                        self.tts('OK.')
-                        break
-                    elif 'no' in y.result_str:
-                        return 'no'
-                if self.dict['place_feature'][correct]:
-                    str=' '.join(self.dict['place_feature'][correct]) +' '+' '.join(self.dict['place_name'][correct])
-                else:
-                    str=' '.join(self.dict['place_name'][correct])
-                print('word ob')
 
-                return str
-        except:
-            pass
-        return str
+    def wordJoin(self,correct:int) -> str:
+        self.tts_server('I will go '+' '.join(self.dict['place_feature'][correct]) +' '.join(self.dict['place_name'][correct])+' is this  OK?')
+        if self.listenAnswer()==False:
+            return 'no'
+        if self.dict['place_feature'][correct]:
+            return ' '.join(self.dict['place_feature'][correct]) +' '+' '.join(self.dict['place_name'][correct])
+        else:
+            return ' '.join(self.dict['place_name'][correct])
+
+
+
+
+
+
+
 
 
 
@@ -271,5 +229,5 @@ class ggitest():
 
 if __name__=='__main__':
     rospy.init_node('test_phase')
-    ggi=ggitest()
+    ggi=GgiTest()
     rospy.spin()

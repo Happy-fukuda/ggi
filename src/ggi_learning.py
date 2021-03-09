@@ -12,7 +12,7 @@ import Levenshtein as lev
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
 
-file_path='/home/athome/catkin_ws/src/voice_common_pkg/config' #作成場所の指定
+file_path='~/catkin_ws/src/voice_common_pkg/config' #作成場所の指定
 
 
 class GgiinStruction:

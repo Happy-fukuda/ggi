@@ -14,8 +14,10 @@ import sys
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
 import rospy
+import os.path
+import random
 
-file_place='~/catkin_ws/src/voice_common_pkg/config'
+file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
 minimum_value=0.5 #コサイン類似度の最低値
 #ベクトル読み込み
 word_vectors = api.load("glove-twitter-200")
@@ -35,12 +37,12 @@ class GgiTest():
     def main(self,req):
         switch_num=0
         #登録したファイルを読み込む
-        if not path.isfile(file_place+'/object_file.pkl'):
+        if not path.isfile(file_path+'/object_file.pkl'):
             print('not found object file')
             sys.exit()
 
         else:
-            with open(file_place+'/object_file.pkl','rb') as f:
+            with open(file_path+'/object_file.pkl','rb') as f:
                 self.dict=pickle.load(f)
 
         #オペレーターの指示を認識
@@ -125,7 +127,7 @@ class GgiTest():
 
 class SearchObject():
 
-    def __init__(self,stt_server:class,tts_server:class,dict_data:dict):
+    def __init__(self,stt_server,tts_server,dict_data:dict):
         self.stt_server=stt_server
         self.tts_server=tts_server
         self.dict=dict_data
@@ -160,10 +162,14 @@ class SearchObject():
                 return branch
 
         #最終オブジェクト名または場所名で判断
-        if switch_num%2==0:
+        if switch_num%2==0 and name_similarity != False:
             return self.wordJoin(name_similarity)
-        else:
+        elif switch_num%2==1 and place_similarty !=False:
             return self.wordJoin(place_similarty)
+        #最終手段
+        else:
+            return self.wordJoin(random.randrange(self.long)
+
 
 
 

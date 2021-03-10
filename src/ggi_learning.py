@@ -9,10 +9,11 @@ import nltk
 import pickle
 import rospy
 import Levenshtein as lev
+import os.path
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
 
-file_path='~/catkin_ws/src/voice_common_pkg/config' #作成場所の指定
+file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config') #作成場所の指定
 
 
 class GgiinStruction:
@@ -113,11 +114,21 @@ class GgiinStruction:
     def WordGeneralization(self):
         with open(file_path+"/class_generalization.pkl","rb") as f:
             #辞書型でvalueは集合
-            class_data=pickle.load(f)
+            class_data1=pickle.load(f)
+        '''
+        with open(file_path+"class_by_wordd2vec.pkl","rb") as w:
+            #辞書型でvalueは集合
+            class_data2=pickle.load(w)
+        '''
         for str in self.name:
-            for k,v in class_data.items():
+            for k,v in class_data1.items():
                 if str in v:
                     self.name.append(k)
+            '''
+            for k,v in class_data2.items():
+                if str in v and k not in self.name:
+                    self.name.append(k)
+            '''
 
 
 
@@ -129,7 +140,7 @@ class GgiinStruction:
         for h in range(len(split)):
             #theだと形容詞に分解されない
             if split[h]=='the':
-                split[h]='a'i
+                split[h]='a'
         pos = nltk.pos_tag(split)  #品詞分解
 
         for i in range(len(pos)):

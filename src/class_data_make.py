@@ -1,5 +1,6 @@
 import pickle as pk
-file_path='/home/athome/catkin_ws/src/voice_common_pkg/config'
+import os
+file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
 food=["snack","bread","snack","rice"]
 drink=["coke","water","tea","green tea","coffee","milk"]
 

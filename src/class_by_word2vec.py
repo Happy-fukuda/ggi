@@ -1,7 +1,6 @@
 import gensim.downloader as api
 import pickle as pk
 import sys
-
 model_name="word2vec-google-news-300"
 print("model is %s" % model_name)
 if input("Do you want to run?(y/n):") in 'y':
@@ -11,7 +10,7 @@ else:
     sys.exit()
 
 class_list=["food","drink","bottle"]
-file_path=""
+file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
 max_word=100 #汎化する用語の最大数
 minimum_evaluation_value=0.5 #最小評価値
 model=api.load("word2vec-google-news-300")

@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import nltk
 import pickle
 from os import path
 #発話
@@ -13,6 +11,7 @@ import gensim.downloader as api
 import sys
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
+from nltk.tag.stanford import POSTagger
 import rospy
 import os.path
 import random
@@ -21,6 +20,10 @@ file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
 minimum_value=0.5 #コサイン類似度の最低値
 #ベクトル読み込み
 word_vectors = api.load("glove-twitter-200")
+#nltkのモデルを読み込む
+_path_to_model= file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger"
+_path_to_jar = file_path + "/stanford-postagger/stanford-postagger.jar"
+pos_tag = StanfordPOSTagger(model_filename=_path_to_model, path_to_jar=_path_to_jar)
 
 class GgiTest():
     def __init__(self):
@@ -64,11 +67,7 @@ class GgiTest():
             else:
                 i=0
                 #形態素解析
-                split=nltk.word_tokenize(string.result_str)
-                for h in range(len(split)):
-                    if split[h]=='the':
-                        split[h]='a'
-                pos = nltk.pos_tag(split)
+                pos = pos_tag(string.result_str.split())
                 #場所とオブジェクトそれぞれの特徴と名前をいつにまとめる
                 while i<len(pos):
                     #前置詞かつofではなかったら場所のリストに追加
@@ -162,13 +161,21 @@ class SearchObject():
                 return branch
 
         #最終オブジェクト名または場所名で判断
-        if switch_num%2==0 and name_similarity != False:
-            return self.wordJoin(name_similarity)
-        elif switch_num%2==1 and place_similarty !=False:
-            return self.wordJoin(place_similarty)
-        #最終手段
-        else:
-            return self.wordJoin(random.randrange(self.long)
+        if switch_num%2==0 :
+            if name_similarity != False:
+                return self.wordJoin(name_similarity)
+            elif place_similarty != False:
+                return self.wordJoin(place_similarty)
+            else:
+                return self.wordJoin(random.randrange(self.long))
+
+        elif switch_num%2==1:
+            if place_similarty != False:
+                return self.wordJoin(place_similarty)
+            elif name_similarity != False:
+                return self.wordJoin(name_similarity
+            else:
+                return self.wordJoin(random.randrange(self.long))
 
 
 
@@ -177,7 +184,7 @@ class SearchObject():
         while 1:
             y=self.stt_server(short_str=False)
             if 'yes' in y.result_str:
-                self.tts('OK.')
+                self.tts_server('OK.')
                 return 'yes'
             elif 'no' in y.result_str:
                 return 'no'

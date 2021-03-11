@@ -5,20 +5,24 @@ from gcp_texttospeech.srv import TTS
 #音声認識
 from voice_common_pkg.srv import SpeechToText
 
-import nltk
 import pickle
 import rospy
 import Levenshtein as lev
 import os.path
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
+from nltk.tag.stanford import StanfordPOSTagger
 
 file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config') #作成場所の指定
+#nltkのモデルを読み込む
+_path_to_model= file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger"
+_path_to_jar = file_path + "/stanford-postagger/stanford-postagger.jar"
+pos_tag = StanfordPOSTagger(model_filename=_path_to_model, path_to_jar=_path_to_jar)
 
 
 class GgiinStruction:
     def __init__(self):
-
+        #nltkのモデルを読み込む
         #保存ファイルの初期化
         with open(file_path+'/object_file.pkl',"wb") as f:
             dictionary={'object_name':[],'object_feature':[],
@@ -115,33 +119,28 @@ class GgiinStruction:
         with open(file_path+"/class_generalization.pkl","rb") as f:
             #辞書型でvalueは集合
             class_data1=pickle.load(f)
-        '''
-        with open(file_path+"class_by_wordd2vec.pkl","rb") as w:
+
+        with open(file_path+"/class_by_word2vec.pkl","rb") as w:
             #辞書型でvalueは集合
             class_data2=pickle.load(w)
-        '''
+
         for str in self.name:
             for k,v in class_data1.items():
                 if str in v:
                     self.name.append(k)
-            '''
+
             for k,v in class_data2.items():
                 if str in v and k not in self.name:
                     self.name.append(k)
-            '''
 
 
 
 
-    #保存  s=string ob=name or place addはpickleファイルに保存するか否か
-    def save_name(self,s,ob,add=True):
+
+    #保存  st=string ob=name or place addはpickleファイルに保存するか否か
+    def save_name(self,st,ob,add=True):
         #形態素解析を行う
-        split=nltk.word_tokenize(s)
-        for h in range(len(split)):
-            #theだと形容詞に分解されない
-            if split[h]=='the':
-                split[h]='a'
-        pos = nltk.pos_tag(split)  #品詞分解
+        pos=pos_tag.tag(st.split())  #品詞分解
 
         for i in range(len(pos)):
             #形容詞であれば特徴に追加

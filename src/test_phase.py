@@ -21,9 +21,8 @@ minimum_value=0.5 #コサイン類似度の最低値
 #ベクトル読み込み
 word_vectors = api.load("glove-twitter-200")
 #nltkのモデルを読み込む
-_path_to_model= file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger"
-_path_to_jar = file_path + "/stanford-postagger/stanford-postagger.jar"
-pos_tag = StanfordPOSTagger(model_filename=_path_to_model, path_to_jar=_path_to_jar)
+pos_tag = StanfordPOSTagger(model_filename=_file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger",
+                            path_to_jar=file_path + "/stanford-postagger/stanford-postagger.jar")
 
 class GgiTest():
     def __init__(self):

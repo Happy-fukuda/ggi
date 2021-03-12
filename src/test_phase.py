@@ -11,18 +11,17 @@ import gensim.downloader as api
 import sys
 from voice_common_pkg.srv import GgiLearning
 from voice_common_pkg.srv import GgiLearningResponse
-from nltk.tag.stanford import POSTagger
+from nltk.tag.stanford import StanfordPOSTagger
 import rospy
-import os.path
 import random
 
-file_path=os.path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
+file_path=path.expanduser('~/catkin_ws/src/voice_common_pkg/config')
 minimum_value=0.5 #コサイン類似度の最低値
 #ベクトル読み込み
 word_vectors = api.load("glove-twitter-200")
 #nltkのモデルを読み込む
-pos_tag = StanfordPOSTagger(model_filename=_file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger",
-                            path_to_jar=file_path + "/stanford-postagger/stanford-postagger.jar")
+pos_tag = StanfordPOSTagger(model_filename = file_path + "/stanford-postagger/models/english-bidirectional-distsim.tagger",
+                            path_to_jar = file_path + "/stanford-postagger/stanford-postagger.jar")
 
 class GgiTest():
     def __init__(self):
@@ -30,7 +29,7 @@ class GgiTest():
         print('Wahing for tts and stt_server')
         rospy.wait_for_service('/tts')
         rospy.wait_for_service('/stt_server')
-        print('server is ready')
+        print('test_phase is ready')
         self.stt=rospy.ServiceProxy('/stt_server',SpeechToText)
         self.tts=rospy.ServiceProxy('/tts', TTS)
         self.server=rospy.Service('/test_phase',GgiLearning,self.main)
@@ -66,7 +65,7 @@ class GgiTest():
             else:
                 i=0
                 #形態素解析
-                pos = pos_tag(string.result_str.split())
+                pos = pos_tag.tag(string.result_str.split())
                 #場所とオブジェクトそれぞれの特徴と名前をいつにまとめる
                 while i<len(pos):
                     #前置詞かつofではなかったら場所のリストに追加
@@ -172,7 +171,7 @@ class SearchObject():
             if place_similarty != False:
                 return self.wordJoin(place_similarty)
             elif name_similarity != False:
-                return self.wordJoin(name_similarity
+                return self.wordJoin(name_similarity)
             else:
                 return self.wordJoin(random.randrange(self.long))
 

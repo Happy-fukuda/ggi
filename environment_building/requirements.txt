@@ -1,5 +1,5 @@
 numpy
-pickle
+pickle5
 nltk
 google-cloud-speech
 rospkg

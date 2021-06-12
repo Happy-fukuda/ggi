@@ -1,6 +1,6 @@
 import gensim.downloader as api
 model=api.load("glove-twitter-200")
-
+'''
 while(1):
     print("please input")
     str=input()
@@ -8,4 +8,4 @@ while(1):
         break
     else:
         print(model.most_similar(str))
-
+'''

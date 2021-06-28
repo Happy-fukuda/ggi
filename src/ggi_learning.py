@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from gcp_texttospeech.srv import TTS
+from voice_common_pkg.srv import TTS
 #音声認識
 from voice_common_pkg.srv import SpeechToText
 
